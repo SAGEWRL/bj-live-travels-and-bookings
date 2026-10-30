@@ -1,3 +1,5 @@
+import { createMediaSlideshow } from './media-slideshow.js';
+
 const searchForm = document.querySelector('#stay-search-form');
 const priceGrid = document.querySelector('#package-price-grid');
 const propertyGrid = document.querySelector('#featured-properties');
@@ -54,24 +56,10 @@ function renderRates() {
 
 function renderProperty(property) {
   const card = makeElement('article', 'property-card');
-  const imageFrame = makeElement('div', 'property-card-image');
-  const photo = property.photos?.[0];
-  const fallback = makeElement('div', 'property-image-empty');
-  fallback.hidden = Boolean(photo);
-  if (photo) {
-    const image = document.createElement('img');
-    image.src = photo;
-    image.alt = `Approved property photograph for ${property.name}`;
-    image.loading = 'lazy';
-    image.addEventListener('error', () => {
-      image.classList.add('is-unavailable');
-      fallback.hidden = false;
-    }, { once: true });
-    imageFrame.append(image);
-  }
-  fallback.append(makeElement('span', '', 'No approved photo supplied'));
-  imageFrame.append(fallback);
-  card.append(imageFrame);
+  const media = Array.isArray(property.media) && property.media.length
+    ? property.media
+    : (property.photos || []).map((url) => ({ url, kind: /\.(mp4|webm|mov)$/i.test(url) ? 'video' : 'image' }));
+  card.append(createMediaSlideshow(media, property.name, 'property-card-image'));
 
   const body = makeElement('div', 'property-card-body');
   body.append(makeElement('span', 'property-card-type', property.accommodationType));

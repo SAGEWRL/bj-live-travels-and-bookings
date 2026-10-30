@@ -28,7 +28,7 @@ async function loadProperty() {
     const rateData = await rateResponse.json();
     const packageRate = rateData.packages?.find((item) => item.type === property.accommodationType);
 
-    document.title = `${property.name} | Marevia`;
+    document.title = `${property.name} | Marevia Travels and Booking`;
     document.querySelector('#property-breadcrumb').textContent = property.name;
     document.querySelector('#property-detail-type').textContent = property.accommodationType;
     document.querySelector('#property-detail-name').textContent = property.name;
@@ -59,16 +59,30 @@ async function loadProperty() {
     }
 
     const gallery = document.querySelector('#property-gallery');
-    if (property.photos?.length) {
-      property.photos.forEach((photo, index) => {
+    const media = Array.isArray(property.media) && property.media.length
+      ? property.media
+      : (property.photos || []).map((url) => ({ url, kind: /\.(mp4|webm|mov)$/i.test(url) ? 'video' : 'image' }));
+    if (media.length) {
+      media.forEach((item, index) => {
+        const source = item.url || item;
+        if (item.kind === 'video' || /\.(mp4|webm|mov)$/i.test(source)) {
+          const video = document.createElement('video');
+          video.src = source;
+          video.controls = true;
+          video.preload = index === 0 ? 'metadata' : 'none';
+          video.playsInline = true;
+          video.setAttribute('aria-label', `${property.name} video ${index + 1}`);
+          gallery.append(video);
+          return;
+        }
         const image = document.createElement('img');
-        image.src = photo;
+        image.src = source;
         image.alt = `${property.name} photo ${index + 1}`;
         image.loading = index === 0 ? 'eager' : 'lazy';
         gallery.append(image);
       });
     } else {
-      gallery.append(textElement('p', 'No approved property photos have been added yet.'));
+      gallery.append(textElement('p', 'No approved property photos or videos have been added yet.'));
     }
 
     const booking = document.querySelector('#property-booking-link');

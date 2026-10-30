@@ -101,15 +101,23 @@ function renderProperty(property) {
   const photos = element('div', 'admin-record-photos');
   for (const photo of property.photos) {
     const figure = document.createElement('figure');
-    const image = document.createElement('img');
-    image.src = photo;
-    image.alt = `${property.name} property photo`;
-    image.loading = 'lazy';
+    const isVideo = /\.(mp4|webm|mov)$/i.test(photo);
+    const media = isVideo ? document.createElement('video') : document.createElement('img');
+    media.src = photo;
+    if (isVideo) {
+      media.controls = true;
+      media.preload = 'metadata';
+      media.playsInline = true;
+      media.setAttribute('aria-label', `${property.name} property video`);
+    } else {
+      media.alt = `${property.name} property photo`;
+      media.loading = 'lazy';
+    }
     const remove = element('button', '', '×');
     remove.type = 'button';
-    remove.setAttribute('aria-label', 'Remove property photo');
+    remove.setAttribute('aria-label', 'Remove property media');
     remove.dataset.removePhoto = photo;
-    figure.append(image, remove);
+    figure.append(media, remove);
     photos.append(figure);
   }
   if (property.photos.length) card.append(photos);

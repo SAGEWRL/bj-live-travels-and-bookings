@@ -1,4 +1,4 @@
-# Marevia
+# Marevia Travels and Booking
 
 Accommodation enquiries for Mombasa, Diani, Malindi, and Kisumu. The site uses an HTML/CSS/vanilla JavaScript frontend and a same-origin Node API. Local development uses SQLite; Vercel deployments use Neon PostgreSQL and Vercel Blob for durable data and property photos.
 
@@ -42,6 +42,19 @@ The Daraja adapter is implemented and verified with mocked provider responses on
 For sandbox testing, first obtain Daraja sandbox credentials and confirm the shortcode/passkey and transaction type with Safaricom. Configure `MPESA_ENV=sandbox`, `MPESA_TRANSACTION_TYPE` (`CustomerPayBillOnline` or `CustomerBuyGoodsOnline`), `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, `MPESA_PASSKEY`, `MPESA_CALLBACK_TOKEN` (at least 32 random characters), and `MPESA_CALLBACK_URL` as the public URL ending in `/api/payments/mpesa/callback`. The server appends the callback token to that URL. Provide a reachable HTTPS callback host for production; the local callback cannot be reached by Safaricom. Test STK success, cancellation, timeout, duplicate callbacks, receipt reuse, wrong amount/phone, and network failure in sandbox before enabling live credentials.
 
 For live M-Pesa, the business must complete Safaricom merchant onboarding/approval, obtain production keys and shortcode/passkey, register the exact public HTTPS callback URL, set `MPESA_ENV=production`, and protect/rotate secrets using the hosting platform’s secret manager. Do not advertise online payment until a real provider approval and end-to-end production-like test has passed. Bank payments are not implemented.
+
+## Cloudflare deployment
+
+Cloudflare Workers can serve the static site and API from `workers/index.js`. Worker assets are built into `dist/`; D1 provides the SQLite-compatible database, and R2 stores property photos. The Worker uses `wrangler.jsonc` to create the D1 database and R2 bucket on first deploy.
+
+1. Sign in locally with `npx wrangler login`.
+2. Set `ADMIN_PASSWORD` and `BOOKING_ACCESS_SECRET` with `npx wrangler secret put ADMIN_PASSWORD` and `npx wrangler secret put BOOKING_ACCESS_SECRET`. Enter secret values directly into the CLI prompt. The password must be at least 14 characters and the booking secret at least 32 random characters.
+3. Run `npm run cloudflare:deploy`. Wrangler builds the static assets and deploys the Worker, D1 database, and R2 bucket.
+4. Verify `/api/health`, `/admin`, property photo upload, and booking flows on the generated `workers.dev` URL before attaching a custom domain.
+
+For local Worker development, copy `.dev.vars.example` to `.dev.vars`, enter local-only secret values, then run `npm run cloudflare:dev`. Never commit `.dev.vars`.
+
+Cloudflare D1 starts empty; local SQLite records and uploaded files are not migrated automatically. Add only approved listings and photos to the Cloudflare deployment. Live M-Pesa requires a reachable HTTPS callback and provider-approved credentials; do not enable it for public testing without those checks.
 
 ## Vercel client preview
 

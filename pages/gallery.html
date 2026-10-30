@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#163943">
+    <meta name="description" content="Browse Marevia property highlights and gallery content in Kenya.">
+    <title>Property Gallery | Marevia Travels and Booking</title>
+    <link rel="stylesheet" href="../styles/site.css">
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script type="module" src="../scripts/site.js"></script>
+    <script type="module" src="../scripts/gallery.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="Marevia Travels and Booking home"><img class="brand-mark" src="/images/marevia-mark.svg" alt=""><span class="brand-name"><strong>MAREVIA</strong><span class="brand-light">Travels and Booking</span></span></a>
+        <div class="nav-links"><a class="nav-link" href="/#search">Find a stay</a><a class="nav-link" href="/#packages">Prices</a><a class="nav-link" href="/gallery">Gallery</a><a class="nav-link" href="/contact">Contact</a><a class="nav-book" href="/booking">Booking request</a></div>
+        <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="mobile-navigation" aria-label="Open navigation"><i data-lucide="menu" aria-hidden="true"></i></button>
+      </nav>
+      <div class="mobile-navigation" id="mobile-navigation" data-mobile-navigation hidden><a href="/#search">Find a stay</a><a href="/#packages">Prices</a><a href="/gallery">Gallery</a><a href="/contact">Contact</a><a href="/booking">Booking request</a></div>
+    </header>
+
+    <main class="page-width gallery-page">
+      <header class="gallery-header">
+        <div>
+          <p class="eyebrow">Property gallery</p>
+          <h1>Browse stays and experiences.</h1>
+        </div>
+        <p>Approved properties and their featured media, ready for guests to explore before requesting a stay.</p>
+      </header>
+      <div class="gallery-grid" id="gallery-grid" aria-live="polite"></div>
+    </main>
+
+    <footer class="site-footer full-footer"><div class="page-width footer-top"><a class="brand footer-brand" href="/" aria-label="Marevia Travels and Booking home"><img class="brand-mark" src="/images/marevia-mark.svg" alt=""><span class="brand-name"><strong>MAREVIA</strong><span class="brand-light">Travels and Booking</span></span></a><p>Find a stay that fits.</p><a class="back-top" href="#top" aria-label="Back to top"><i data-lucide="arrow-up" aria-hidden="true"></i></a></div><div class="page-width footer-bottom"><span>© <span data-current-year></span> Marevia Travels and Booking</span><nav aria-label="Footer navigation"><a href="/#search">Find a stay</a><a href="/#packages">Prices</a><a href="/booking">Booking request</a><a href="/contact">Contact</a></nav><span>Mombasa Airport Road, Kenya</span></div></footer>
+  </body>
+</html>

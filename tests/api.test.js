@@ -279,6 +279,58 @@ test('property changes require an admin session and published listings are searc
   assert.equal(existsSync(join(uploadDirectory, rawPhotos[1].split('/').pop())), true);
 });
 
+test('property media uploads accept image and video files and are exposed on the public property record', async () => {
+  const login = await request('/api/admin/login', {
+    method: 'POST',
+    headers: { Origin: baseUrl },
+    body: { password: adminPassword },
+  });
+  const adminHeaders = { Cookie: login.headers.get('set-cookie').split(';')[0], Origin: baseUrl };
+
+  const propertyResponse = await request('/api/admin/properties', {
+    method: 'POST',
+    headers: adminHeaders,
+    body: {
+      name: 'Gallery media test property',
+      location: 'Mombasa',
+      accommodationType: 'Single room',
+      dailyPriceKes: 2800,
+      guestCapacity: 2,
+      availabilityStatus: 'available',
+      priceConfirmed: true,
+      published: true,
+    },
+  });
+  const property = (await propertyResponse.json()).property;
+
+  const image = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
+  const video = Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+  const imageUpload = await request(`/api/admin/properties/${property.id}/photos`, {
+    method: 'POST',
+    headers: adminHeaders,
+    body: { contentType: 'image/png', data: image.toString('base64') },
+  });
+  assert.equal(imageUpload.status, 201);
+  assert.equal((await imageUpload.json()).photos.length, 1);
+
+  const videoUpload = await request(`/api/admin/properties/${property.id}/photos`, {
+    method: 'POST',
+    headers: adminHeaders,
+    body: { contentType: 'video/webm', data: video.toString('base64') },
+  });
+  assert.equal(videoUpload.status, 201);
+  const media = (await videoUpload.json()).photos;
+  assert.equal(media.length, 2);
+  assert.ok(media.every((url) => typeof url === 'string' && url.length > 0));
+
+  const publicProperty = await request(`/api/properties/${property.slug}`);
+  const publicPayload = await publicProperty.json();
+  assert.equal(publicPayload.property.photos.length, 2);
+  assert.ok(publicPayload.property.photos.some((url) => url.includes('.png') || url.includes('.jpg') || url.includes('.webp')));
+  assert.ok(publicPayload.property.photos.some((url) => url.includes('.webm') || url.includes('.mp4')));
+});
+
 test('M-Pesa stays disabled until the merchant configuration exists', async () => {
   const response = await request('/api/payments/mpesa', { method: 'POST', headers: { Origin: baseUrl }, body: {} });
   assert.equal(response.status, 503);

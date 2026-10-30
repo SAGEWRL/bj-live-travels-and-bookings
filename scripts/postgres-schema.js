@@ -110,3 +110,5 @@ CREATE TABLE IF NOT EXISTS admin_login_attempts (
 
 CREATE INDEX IF NOT EXISTS admin_login_attempts_expiry_idx ON admin_login_attempts(window_ends_at);
 `;
+
+export const D1_SCHEMA = POSTGRES_SCHEMA;

@@ -11,10 +11,12 @@ const MAX_JSON_BYTES = 7 * 1024 * 1024;
 const MAX_PROPERTY_PHOTO_BYTES = 4 * 1024 * 1024;
 const VALID_BOOKING_STATUSES = new Set(['pending', 'reviewing', 'confirmed', 'declined', 'cancelled']);
 const VALID_AVAILABILITY = new Set(['unconfirmed', 'available', 'unavailable']);
-const ALLOWED_IMAGE_TYPES = new Map([
+const ALLOWED_MEDIA_TYPES = new Map([
   ['image/jpeg', { ext: '.jpg', signature: (bytes) => bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff }],
   ['image/png', { ext: '.png', signature: (bytes) => bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) }],
   ['image/webp', { ext: '.webp', signature: (bytes) => bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP' }],
+  ['video/mp4', { ext: '.mp4', signature: (bytes) => bytes.subarray(0, 4).toString('ascii') === 'ftyp' || bytes.subarray(4, 8).toString('ascii').includes('ftyp') }],
+  ['video/webm', { ext: '.webm', signature: (bytes) => bytes.subarray(0, 4).equals(Buffer.from([26, 69, 223, 163])) }],
 ]);
 
 class ApiError extends Error {
@@ -49,8 +51,8 @@ function bookingAccessTokenMatches(request, booking) {
   return provided.length === stored.length && timingSafeEqual(provided, stored);
 }
 
-function bookingCookie(token) {
-  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+function bookingCookie(token, environment) {
+  const secure = environment.NODE_ENV === 'production' ? '; Secure' : '';
   return `bjlive_booking=${token}; Path=/api/; HttpOnly; SameSite=Strict; Max-Age=604800${secure}`;
 }
 
@@ -105,7 +107,16 @@ async function readBytes(request, maxBytes) {
   return Buffer.concat(chunks);
 }
 
+function mediaFromUrls(urls) {
+  return (Array.isArray(urls) ? urls : []).filter(Boolean).map((url) => {
+    const extension = String(url).split('?')[0].split('/').at(-1)?.toLowerCase() || '';
+    const kind = extension.endsWith('.mp4') || extension.endsWith('.webm') || extension.endsWith('.mov') ? 'video' : 'image';
+    return { url, kind };
+  });
+}
+
 function propertyFromRow(row) {
+  const photos = JSON.parse(row.photos_json);
   return {
     id: row.id,
     slug: row.slug,
@@ -119,7 +130,8 @@ function propertyFromRow(row) {
     bedrooms: row.bedrooms,
     bathrooms: row.bathrooms,
     amenities: JSON.parse(row.amenities_json),
-    photos: JSON.parse(row.photos_json),
+    photos,
+    media: mediaFromUrls(photos),
     availabilityStatus: row.availability_status,
     published: Boolean(row.is_published),
     createdAt: row.created_at,
@@ -132,6 +144,7 @@ function publicPropertyFromRow(row, packageRates) {
   const packageRate = packageRates.find((rate) => rate.type === property.accommodationType);
   return {
     ...property,
+    media: mediaFromUrls(property.photos),
     dailyPriceKes: property.priceConfirmed ? property.dailyPriceKes : null,
     priceRange: packageRate
       ? { minimumPriceKes: packageRate.minimumPriceKes, maximumPriceKes: packageRate.maximumPriceKes, unit: 'per day' }
@@ -275,8 +288,8 @@ async function saveProperty(database, id, slug, property) {
   );
 }
 
-function setCookie(request, sessionId, maxAge) {
-  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+function setCookie(request, sessionId, maxAge, environment) {
+  const secure = environment.NODE_ENV === 'production' ? '; Secure' : '';
   return `bjlive_admin=${sessionId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure}`;
 }
 
@@ -437,14 +450,14 @@ export function createApiHandler({ database, environment = process.env, uploadDi
       await database.prepare('DELETE FROM admin_login_attempts WHERE ip = ?').run(ip);
       const sessionId = randomBytes(32).toString('hex');
       await database.prepare('INSERT INTO admin_sessions (id, expires_at) VALUES (?, ?)').run(sessionId, Date.now() + SESSION_TTL_MS);
-      return sendJson(response, 200, { authenticated: true }, { 'Set-Cookie': setCookie(request, sessionId, SESSION_TTL_MS / 1000) });
+      return sendJson(response, 200, { authenticated: true }, { 'Set-Cookie': setCookie(request, sessionId, SESSION_TTL_MS / 1000, environment) });
     }
 
     if (pathname === '/api/admin/logout' && request.method === 'POST') {
       ensureOrigin(request);
       const sessionId = getSessionId(request);
       if (sessionId) await database.prepare('DELETE FROM admin_sessions WHERE id = ?').run(sessionId);
-      return sendJson(response, 200, { authenticated: false }, { 'Set-Cookie': setCookie(request, '', 0) });
+      return sendJson(response, 200, { authenticated: false }, { 'Set-Cookie': setCookie(request, '', 0, environment) });
     }
 
     await requireAdmin(request);
@@ -495,16 +508,16 @@ export function createApiHandler({ database, environment = process.env, uploadDi
         const body = await readJson(request);
         contentType = body.contentType;
         if (typeof body.data !== 'string' || body.data.length > 6 * 1024 * 1024) {
-          throw new ApiError(400, 'invalid_image', 'Upload a JPEG, PNG, or WebP image no larger than 4 MB.');
+          throw new ApiError(400, 'invalid_media', 'Upload a JPEG, PNG, WebP, MP4, or WebM media file no larger than 4 MB.');
         }
         bytes = Buffer.from(body.data, 'base64');
       } else {
         bytes = await readBytes(request, MAX_PROPERTY_PHOTO_BYTES);
       }
-      const media = ALLOWED_IMAGE_TYPES.get(contentType);
-      if (!media) throw new ApiError(400, 'invalid_image', 'Upload a JPEG, PNG, or WebP image no larger than 4 MB.');
+      const media = ALLOWED_MEDIA_TYPES.get(contentType);
+      if (!media) throw new ApiError(400, 'invalid_media', 'Upload a JPEG, PNG, WebP, MP4, or WebM media file no larger than 4 MB.');
       if (!bytes.length || bytes.length > MAX_PROPERTY_PHOTO_BYTES || !media.signature(bytes)) {
-        throw new ApiError(400, 'invalid_image_contents', 'The uploaded file does not match its image type or exceeds 4 MB.');
+        throw new ApiError(400, 'invalid_media_contents', 'The uploaded file does not match its media type or exceeds 4 MB.');
       }
       const fileName = `${randomUUID()}${media.ext}`;
       const photoUrl = await storePhoto(fileName, bytes, contentType, filesDirectory, photoStorage);
@@ -728,7 +741,7 @@ export function createApiHandler({ database, environment = process.env, uploadDi
       if (pathname === '/api/bookings' && request.method === 'POST') {
         const result = await createBooking(request);
         sendJson(response, result.status, { booking: result.booking, duplicate: result.duplicate },
-          result.customerAccessToken ? { 'Set-Cookie': bookingCookie(result.customerAccessToken) } : {});
+          result.customerAccessToken ? { 'Set-Cookie': bookingCookie(result.customerAccessToken, environment) } : {});
         return true;
       }
       const customerBooking = pathname.match(/^\/api\/bookings\/([A-Z0-9-]+)$/i);
@@ -872,7 +885,7 @@ async function storePhoto(fileName, bytes, contentType, directory, storage) {
 }
 
 async function removeStoredPhoto(photo, directory, storage) {
-  if (typeof photo === 'string' && /^https:\/\//i.test(photo)) {
+  if (typeof photo === 'string' && (/^https:\/\//i.test(photo) || photo.startsWith('/uploads/properties/'))) {
     if (storage) await storage.delete(photo);
     return;
   }

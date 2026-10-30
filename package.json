@@ -4,17 +4,23 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "22.x"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "node --env-file-if-exists=.env scripts/serve.js",
     "start": "node --env-file-if-exists=.env scripts/serve.js",
     "migrate": "node --env-file-if-exists=.env scripts/migrate.js",
     "migrate:rollback": "node --env-file-if-exists=.env scripts/migrate.js --down",
+    "cloudflare:build": "node scripts/build-cloudflare-assets.js",
+    "cloudflare:dev": "npm run cloudflare:build && wrangler dev",
+    "cloudflare:deploy": "npm run cloudflare:build && wrangler deploy",
     "test": "node --test"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
     "@vercel/blob": "^2.8.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.3"
   }
 }

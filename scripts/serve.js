@@ -10,6 +10,7 @@ const routes = new Map([
   ['/', 'index.html'],
   ['/booking', 'pages/booking.html'],
   ['/contact', 'pages/contact.html'],
+  ['/gallery', 'pages/gallery.html'],
   ['/admin', 'pages/admin.html'],
 ]);
 const contentTypes = new Map([

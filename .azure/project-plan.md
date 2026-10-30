@@ -1,53 +1,49 @@
 # Bjlive Travels & Bookings Project Plan
 
-**Status**: Integrated  
+**Status**: Awaiting approval  
 **Created**: 2026-10-19  
 **Mode**: NEW
 
 ## Project Overview
 
-Scope was explicitly expanded on 2026-10-19 to an accommodation enquiry/booking platform while continuing the existing website. Keep the existing HTML5/CSS3/vanilla JavaScript frontend and Node runtime. Add a same-origin Node API, SQLite persistence, schema migrations, protected admin workspace, published property search/details, booking requests, and a gated M-Pesa integration path. Do not create a separate app or seed demo properties.
+Build a polished, mobile-first static travel website for Bjlive Travels & Bookings, based in Mombasa Airport Road, Kenya. The initial implementation uses HTML5, CSS3, and vanilla JavaScript, with local browser testing. It has no backend, persistent enquiry storage, live availability, admin dashboard, notifications, or payment processing.
 
-Supported locations are Mombasa, Diani, Malindi, and Kisumu. The business supplied phone numbers 0735 109 066 and 0714 237 082, the accommodation categories and rates below, and the hotel photo stored at `images/hotel.jpg`. Do not invent properties, amenities, availability, reviews, awards, or a specific address. The supplied photo visibly contains medical-centre signage; retain it as provided but confirm that it is appropriate before publicly identifying it as a hotel.
+Only the business name and Mombasa Airport Road location are confirmed. All other business facts remain unpublished until the business confirms them. The site must never imply that an enquiry was delivered, a booking was made, or availability or payment was confirmed.
 
 ## Implementation Scope
 
-- Accommodation-first homepage with date/location/type/guest search, exact starting-price/range cards, verified published listings, locations, booking process, contact, and responsive mobile navigation.
-- Public listing and property-details routes show approved fields and photos only. Unconfirmed property-specific rates are redacted from public API responses; public pages use the package range.
-- Admin `/admin` is protected server-side by a configured password and HttpOnly session. Admin can manage listings/photos/amenities/blackout dates/package rates, review booking requests, enter the guest-agreed total, and view provider payment records.
-- Booking requests validate location, type, property, dates, guests, phone/email, calculate check-out minus check-in, persist as `pending`, and use idempotency. A private HttpOnly request cookie grants status access. Requests are not reservations.
-- Confirming a request requires an admin-entered exact total within the original estimate range. Date conflicts check manual blackout blocks and confirmed bookings; availability still requires business confirmation.
-- M-Pesa server adapter supports OAuth, STK initiation, provider status queries, idempotency, and a token-protected callback that requires provider reconciliation. Actual sandbox/live calls remain unverified until credentials and external approval are supplied.
-- User-selected JPEG/PNG/WebP property uploads are type-signature checked, limited to 4.5 MB, and stored under `storage/property-images/`. No personal photo directory is exposed.
-- Reduced-motion behavior, semantic controls, accessible focus, responsive layouts, noindex admin page, `robots.txt`, generated sitemap, and branded 404.
+- Responsive sticky navigation with an accessible mobile menu.
+- Full-width travel hero with approved imagery, readable overlay, and clear tour/enquiry links. Do not invent or imply destinations served.
+- Homepage sections for tours and safaris, destinations, featured accommodation, hotel/Airbnb enquiries, ticketing, airport transfers, travel packages, FAQs, location, contact, and footer.
+- Use `images/hotel.jpg` only after the authorized client photo is supplied. Until then, show a neutral visual placeholder. Use other destination imagery only when approved for use.
+- Do not populate package search or filters with invented listings; only activate these controls when verified records exist.
+- Enquiry form with service, destination, dates, traveller count, name, and preferred contact fields, with accessible client-side validation and a local draft review state. It must not transmit or persist personal data.
+- Keep WhatsApp handoff disabled until the official business number is confirmed and configured. When enabled in a future approved update, the customer must review and send the prepared message; the handoff is not a reservation.
+- Include genuine testimonials or FAQ answers only when supplied and approved.
+- Respect reduced-motion preferences, keyboard access, mobile layouts, semantic HTML, and fast local loading.
 
 ## Business Accuracy
 
 Confirmed for publication:
 
 | Detail | Confirmed value |
-| --- | --- |
+|---|---|
 | Business name | Bjlive Travels & Bookings |
 | Location | Mombasa Airport Road, Kenya |
-| Supported accommodation locations | Mombasa, Diani, Malindi, Kisumu |
-| Phone/WhatsApp | 0735 109 066; 0714 237 082 |
 
-Owner-supplied accommodation rates (per day): single room KSh 2,000 starting, range KSh 2,000–4,000; double room KSh 2,500, range KSh 2,500–5,000; BnB studio KSh 3,000, range KSh 3,000–5,000; one-bedroom KSh 4,000, range KSh 4,000–5,000; two-bedroom KSh 8,000, range KSh 8,000–10,000. Final property price depends on property/location/date and must be agreed before payment.
-
-Do not invent property names, exact address/map pin, amenities, date availability, ratings, reviews, discounts, or email/hours/social accounts. New property inventory stays empty/unpublished until entered and verified by the administrator.
+Do not invent or publish phone numbers, WhatsApp number, exact street address or map pin, hotel name/address, room types, amenities, prices, availability, reviews, affiliations, email, social accounts, opening hours, specific packages, or policy answers. Keep these absent until verified; do not display fake placeholder contact values.
 
 ## Technology and Local Validation
 
 | Concern | Choice |
-| --- | --- |
-| Frontend | Existing HTML5/CSS3 and vanilla JavaScript |
-| Backend/API | Node.js built-in HTTP server, same-origin JSON API |
-| Database | SQLite via Node `node:sqlite`, versioned SQL migrations in `migrations/` |
-| Dependencies | No npm runtime dependencies |
-| Local commands | `npm run migrate`, `npm run dev`, `npm test` |
-| Environment | `.env.example`; secrets are local/server-side only |
+|---|---|
+| Frontend | Static HTML5, CSS3, vanilla JavaScript |
+| Backend/data | None in this phase |
+| Dependencies | Avoid runtime dependencies; use native browser APIs |
+| Local test command | `npm test` with Node.js built-in `node:test` for form logic |
+| Browser check | Run the site locally and verify navigation, responsive layout, form validation, and disabled WhatsApp behavior |
 
-No Azure service is configured. The current SQLite/in-memory-session architecture targets one Node instance with durable disk; production horizontal scale requires managed PostgreSQL and shared sessions.
+No Azure resources, database, login, API, deployment, or secrets are needed for this phase.
 
 ## Project Structure
 
@@ -55,33 +51,31 @@ No Azure service is configured. The current SQLite/in-memory-session architectur
 .
 ├── .azure/
 │   └── project-plan.md
-├── images/hotel.jpg
-├── migrations/                   # Schema only; no inventory rows
-├── pages/                        # Public, admin, booking, and property pages
-├── scripts/                      # Node API, SQLite migrations, browser clients
-├── storage/property-images/       # Explicit property uploads; ignored by Git
-├── styles/
-├── tests/                         # API, booking, migration, and mocked Daraja tests
-├── .env.example
+├── images/
+│   └── hotel.jpg                 # Add after receiving the authorized client photo
+├── tests/
+│   └── booking-form.test.js
 ├── index.html
-├── package.json
-└── README.md
+├── styles.css
+├── script.js
+├── package.json                  # Local node:test command
+└── README.md                     # Local run and verified-content guidance
 ```
 
 ## Acceptance Checks
 
 - The homepage renders as a complete, responsive travel website and includes the requested sections.
-- Package price starts/ranges match owner figures and unconfirmed exact property prices are not exposed publicly.
-- No property or booking demo rows are inserted; public search has a useful empty state.
-- Booking estimates, pending submission, duplicate protection, private customer status, and admin exact-total confirmation work.
-- Admin controls require server auth; property upload/delete and availability blocks are protected.
-- Payment status changes only through mocked-tested provider reconciliation; no real Daraja request is claimed until credentials/approval are configured.
-- `npm test`, local route smoke checks, and mobile/tablet/desktop browser checks pass.
+- The only unqualified business claims are the confirmed business name and Mombasa Airport Road location.
+- The hotel image is not represented as supplied until `images/hotel.jpg` is present and authorized.
+- The enquiry form validates input and presents a local draft without sending or storing it.
+- WhatsApp handoff is inactive until a confirmed number is configured.
+- Navigation works by keyboard and touch; motion respects reduced-motion settings.
+- `npm test` passes, and the page is manually checked at desktop and mobile widths.
 
 ## Later Phases, Not Included
 
-Not implemented: email/SMS notifications, bank payments, real Daraja sandbox/live verification, live property inventory/availability integrations, production PostgreSQL migration, public hosting/domain, operational backups/monitoring, and independent security review.
+Secure backend and enquiry database, staff authentication and admin dashboard, package management, live availability integrations, email/SMS notifications, M-Pesa/card payments, public deployment, and custom domain setup are separate future work. They require explicit scope, verified providers, and security review before being presented as functional.
 
 ## Next Step
 
-Continue validating the integrated app against the acceptance checks. Before public production use, configure private environment secrets, verify the photographed building’s business relevance, enter approved property records, choose durable hosting, and complete Safaricom sandbox and live approvals.
+Review and approve this plan in the plan view. After approval, scaffold the static frontend and validate it locally. Do not start implementation until the plan is approved.

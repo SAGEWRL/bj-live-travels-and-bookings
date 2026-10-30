@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#163943">
-    <title>Admin | Marevia</title>
+    <title>Admin | Marevia Travels and Booking</title>
     <link rel="stylesheet" href="../styles/site.css">
     <link rel="stylesheet" href="../styles/admin.css">
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
@@ -14,7 +14,7 @@
   <body>
     <header class="site-header admin-header">
       <nav class="site-nav" aria-label="Administrator navigation">
-        <a class="brand" href="/"><img class="brand-mark" src="/images/marevia-mark.svg" alt=""><span class="brand-name"><strong>MAREVIA</strong><span class="brand-light">Let Wonder Lead the Way</span></span></a>
+        <a class="brand" href="/" aria-label="Marevia Travels and Booking home"><img class="brand-mark" src="/images/marevia-mark.svg" alt=""><span class="brand-name"><strong>MAREVIA</strong><span class="brand-light">Travels and Booking</span></span></a>
         <a class="nav-link" href="/">View website <i data-lucide="arrow-up-right" aria-hidden="true"></i></a>
       </nav>
     </header>
@@ -47,7 +47,7 @@
               <label>Availability status<select name="availabilityStatus"><option value="unconfirmed">Unconfirmed</option><option value="available">Available to enquire</option><option value="unavailable">Unavailable</option></select></label>
               <label class="admin-check"><input name="priceConfirmed" type="checkbox"> I have confirmed this property's exact daily price</label>
               <label class="admin-check"><input name="published" type="checkbox"> Publish this property on the public site</label>
-              <label>Property photos <span class="admin-hint">JPEG, PNG or WebP, up to 4 MB each</span><input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
+              <label>Property media <span class="admin-hint">Images or short videos, up to 4 MB each</span><input name="photos" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" multiple></label>
               <div class="admin-form-actions"><button class="admin-button admin-button-primary" type="submit">Save property</button><button class="admin-button admin-button-quiet" id="cancel-property-form" type="button">Cancel</button></div>
             </form>
             <div class="admin-record-list" id="property-list" aria-live="polite"><p class="admin-empty">Loading properties…</p></div>

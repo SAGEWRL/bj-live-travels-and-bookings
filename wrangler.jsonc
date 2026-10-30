@@ -12,6 +12,7 @@
       "/admin",
       "/booking",
       "/contact",
+      "/gallery",
       "/properties/*"
     ],
     "not_found_handling": "404-page"

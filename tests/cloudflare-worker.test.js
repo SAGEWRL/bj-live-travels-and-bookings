@@ -24,6 +24,14 @@ test('Cloudflare Worker maps friendly admin route to static HTML', async () => {
   assert.equal(await response.text(), '/pages/admin.html');
 });
 
+test('Cloudflare Worker maps the gallery route to static HTML', async () => {
+  const response = await worker.fetch(new Request('https://example.workers.dev/gallery'), {
+    ASSETS: { fetch: (request) => new Response(new URL(request.url).pathname) },
+  });
+
+  assert.equal(await response.text(), '/pages/gallery.html');
+});
+
 test('Cloudflare Worker reports missing required API configuration', async () => {
   const response = await worker.fetch(new Request('https://example.workers.dev/api/admin/session'), {});
 

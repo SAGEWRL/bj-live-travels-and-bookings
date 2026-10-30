@@ -37,6 +37,7 @@ function assetUrl(url) {
   if (url.pathname === '/admin') return '/pages/admin.html';
   if (url.pathname === '/booking') return '/pages/booking.html';
   if (url.pathname === '/contact') return '/pages/contact.html';
+  if (url.pathname === '/gallery') return '/pages/gallery.html';
   if (/^\/properties\/[a-z0-9-]+$/i.test(url.pathname)) return '/pages/property.html';
   return null;
 }

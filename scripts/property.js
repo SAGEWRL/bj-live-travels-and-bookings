@@ -1,3 +1,5 @@
+import { createMediaSlideshow } from './media-slideshow.js';
+
 function textElement(tag, text) {
   const element = document.createElement(tag);
   element.textContent = text;
@@ -33,7 +35,7 @@ async function loadProperty() {
     document.querySelector('#property-detail-type').textContent = property.accommodationType;
     document.querySelector('#property-detail-name').textContent = property.name;
     document.querySelector('#property-detail-location').textContent = `${property.location} · Up to ${property.guestCapacity} guests`;
-    document.querySelector('#property-detail-description').textContent = property.description || 'Contact Marevia for the property description and any further verified details.';
+    document.querySelector('#property-detail-description').textContent = property.description || 'Property details are available on request.';
 
     const price = document.querySelector('#property-detail-price');
     if (property.priceConfirmed) {
@@ -62,28 +64,7 @@ async function loadProperty() {
     const media = Array.isArray(property.media) && property.media.length
       ? property.media
       : (property.photos || []).map((url) => ({ url, kind: /\.(mp4|webm|mov)$/i.test(url) ? 'video' : 'image' }));
-    if (media.length) {
-      media.forEach((item, index) => {
-        const source = item.url || item;
-        if (item.kind === 'video' || /\.(mp4|webm|mov)$/i.test(source)) {
-          const video = document.createElement('video');
-          video.src = source;
-          video.controls = true;
-          video.preload = index === 0 ? 'metadata' : 'none';
-          video.playsInline = true;
-          video.setAttribute('aria-label', `${property.name} video ${index + 1}`);
-          gallery.append(video);
-          return;
-        }
-        const image = document.createElement('img');
-        image.src = source;
-        image.alt = `${property.name} photo ${index + 1}`;
-        image.loading = index === 0 ? 'eager' : 'lazy';
-        gallery.append(image);
-      });
-    } else {
-      gallery.append(textElement('p', 'No approved property photos or videos have been added yet.'));
-    }
+    gallery.replaceChildren(createMediaSlideshow(media, property.name));
 
     const booking = document.querySelector('#property-booking-link');
     booking.href = `/booking?propertyId=${encodeURIComponent(property.id)}&location=${encodeURIComponent(property.location)}&type=${encodeURIComponent(property.accommodationType)}`;

@@ -15,11 +15,11 @@ The SQLite database is created at `data/bjlive.sqlite` by default. Set `DATABASE
 
 ## Administrator
 
-Open `/admin`, sign in with `ADMIN_PASSWORD`, and use the workspace to edit package price ranges, add or update property details, upload approved photos, manage blocked dates, and review booking requests. New properties are unpublished by default. Publish a listing only after its name, location, type, capacity, photos, description, amenities, and price have been confirmed. Booking requests can only be marked confirmed when the administrator enters an exact guest-agreed total within the original estimate range. Package rates can be edited in the same screen.
+Open `/admin`, sign in with `ADMIN_PASSWORD`, and use the workspace to edit package price ranges, add or update property details, upload approved media, manage blocked dates, and review booking requests. New properties are unpublished by default. Publish a listing only after its name, location, type, capacity, photos, description, amenities, and price have been confirmed. Booking requests can only be marked confirmed when the administrator enters an exact guest-agreed total within the original estimate range. Package rates can be edited in the same screen.
 
 The initial database contains schema only and no property or booking records. No example inventory is inserted. Public listings appear after an administrator adds and publishes them.
 
-Uploads are explicitly selected in the admin form, limited to JPEG/PNG/WebP and 4 MB per image, and signature-checked. Local uploads are stored under `storage/property-images/`; Vercel uploads use public Vercel Blob URLs. Do not copy a whole phone photo library into the storage folder.
+Uploads are explicitly selected in the admin form, limited to JPEG/PNG/WebP images and MP4/WebM videos up to 4 MB each, and signature-checked. Property detail pages and gallery cards show multiple media items in swipeable, scrollable slideshows. Local uploads are stored under `storage/property-images/`; Vercel uploads use public Vercel Blob URLs. Do not copy a whole phone photo library into the storage folder.
 
 ## Prices and booking requests
 
@@ -33,7 +33,7 @@ The built-in package card shows the business-provided starts and ranges per day:
 | One-bedroom accommodation | KSh 4,000 | KSh 4,000–5,000 |
 | Two-bedroom accommodation | KSh 8,000 | KSh 8,000–10,000 |
 
-A booking request calculates days as the check-out date minus check-in date, stores a pending request, returns a reference, and prevents duplicate submissions with an idempotency key. It is not a reservation. The admin must confirm exact property, price, and availability directly with the guest. Customer status access uses a 7-day HttpOnly cookie; only a hash of the per-request token is stored. `BOOKING_ACCESS_SECRET` must remain stable between restarts so existing customer request links keep working.
+A booking request calculates days as the check-out date minus check-in date, stores a pending request, returns a reference, and prevents duplicate submissions with an idempotency key. It is not a reservation. The customer status page refreshes pending requests and displays accepted or declined decisions. Admins can open a prefilled WhatsApp message for either decision; the message must be sent from WhatsApp. No automatic SMS or email provider is configured. Customer status access uses a 7-day HttpOnly cookie; only a hash of the per-request token is stored. `BOOKING_ACCESS_SECRET` must remain stable between restarts so existing customer request links keep working.
 
 ## M-Pesa
 

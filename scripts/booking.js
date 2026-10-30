@@ -14,6 +14,7 @@ let selectedEstimate = null;
 let submittedPayloadSignature = '';
 let idempotencyKey = '';
 let submitting = false;
+let statusRefreshTimer;
 
 function money(value) {
   return `KSh ${Number(value).toLocaleString('en-KE')}`;
@@ -152,7 +153,7 @@ function renderSummary(values, estimate) {
   const rows = [
     ['Location', values.location],
     ['Accommodation', values.accommodationType],
-    ['Property', estimate.property?.name || 'Marevia to help find a property'],
+    ['Property', estimate.property?.name || 'Marevia will arrange a suitable property'],
     ['Dates', `${values.checkIn} to ${values.checkOut}`],
     ['Duration', `${estimate.durationDays} ${estimate.durationDays === 1 ? 'day' : 'days'}`],
     ['Guests', String(values.guests)],
@@ -258,6 +259,26 @@ function renderCustomerBookingStatus(booking, payments = []) {
   if (booking.customerPhone) phone.value = booking.customerPhone;
   refresh.hidden = false;
 
+  if (booking.status === 'declined' || booking.status === 'cancelled') {
+    title.textContent = booking.status === 'declined' ? 'Booking request declined' : 'Booking request cancelled';
+    message.textContent = booking.status === 'declined'
+      ? 'Marevia was unable to accept this request. Contact us if you would like help with another stay.'
+      : 'This booking request has been cancelled. Contact Marevia if you need assistance.';
+    paymentForm.hidden = true;
+    paymentStatus.textContent = '';
+    return;
+  }
+
+  if (booking.status === 'pending' || booking.status === 'reviewing') {
+    title.textContent = booking.status === 'reviewing' ? 'Request under review' : 'Request received';
+    message.textContent = booking.status === 'reviewing'
+      ? 'Marevia is reviewing your request. This page will show the decision when it is available.'
+      : 'Your request is awaiting review. This page will show the decision when it is available.';
+    paymentForm.hidden = true;
+    paymentStatus.textContent = '';
+    return;
+  }
+
   if (payments.some((payment) => payment.status === 'succeeded')) {
     title.textContent = 'Payment verified';
     message.textContent = 'M-Pesa payment success was verified with the provider.';
@@ -315,6 +336,7 @@ function renderCustomerBookingStatus(booking, payments = []) {
 
 async function refreshBookingStatus(reference = new URLSearchParams(window.location.search).get('reference')) {
   if (!reference) return;
+  window.clearTimeout(statusRefreshTimer);
   try {
     const result = await api(`/api/bookings/${encodeURIComponent(reference)}`);
     const booking = result.booking;
@@ -329,11 +351,16 @@ async function refreshBookingStatus(reference = new URLSearchParams(window.locat
       contact: booking.customerPhone,
       notes: `Request ${booking.reference}. Status: ${booking.status}. ${booking.confirmedAmountKes ? `Guest-agreed total: ${money(booking.confirmedAmountKes)}.` : 'Exact price and availability require confirmation.'}`,
     }, '0735 109 066');
-    document.querySelector('#review-kicker').textContent = booking.status === 'confirmed' ? 'Request confirmed' : 'Request status';
-    document.querySelector('#review-title').textContent = `Request ${booking.reference}`;
-    document.querySelector('#review-disclaimer').textContent = booking.status === 'confirmed'
-      ? 'The business confirmed this booking request. Keep this page private; payment is separate and is not confirmed until the provider verifies it.'
-      : 'This is a booking request, not a confirmed reservation. Availability and exact price must be confirmed by Marevia.';
+    const statusCopy = {
+      pending: ['Request received', 'Your request is awaiting review. This page will show the decision when it is available.'],
+      reviewing: ['Request under review', 'Marevia is reviewing your booking request. This page will show the decision when it is available.'],
+      confirmed: ['Booking accepted', `Marevia accepted your booking request${booking.confirmedAmountKes ? ` for ${money(booking.confirmedAmountKes)}` : ''}. Payment is separate and is not complete until verified by the provider.`],
+      declined: ['Booking declined', 'Marevia was unable to accept this request. Contact us if you would like help with another stay.'],
+      cancelled: ['Booking cancelled', 'This booking request has been cancelled. Contact Marevia if you need assistance.'],
+    }[booking.status] || ['Request status', 'Your booking request status has been updated.'];
+    document.querySelector('#review-kicker').textContent = `Request ${booking.reference}`;
+    document.querySelector('#review-title').textContent = statusCopy[0];
+    document.querySelector('#review-disclaimer').textContent = statusCopy[1];
     const referenceRow = [...summary.children].find((row) => row.querySelector('dt')?.textContent === 'Request status');
     if (!referenceRow) {
       summary.replaceChildren();
@@ -363,6 +390,9 @@ async function refreshBookingStatus(reference = new URLSearchParams(window.locat
     document.querySelector('#confirmation-actions').hidden = false;
     layout.hidden = true;
     review.hidden = false;
+    if (booking.status === 'pending' || booking.status === 'reviewing') {
+      statusRefreshTimer = window.setTimeout(() => refreshBookingStatus(reference), 20000);
+    }
   } catch (error) {
     paymentPanel.hidden = false;
     document.querySelector('#booking-payment-message').textContent = error.message;
@@ -375,6 +405,10 @@ async function refreshBookingStatus(reference = new URLSearchParams(window.locat
 form.addEventListener('input', () => { clearErrors(); updatePreview(); });
 form.addEventListener('change', () => { clearErrors(); updatePreview(); });
 form.elements.namedItem('checkIn').addEventListener('change', (event) => {
+  if (!event.target.value) {
+    form.elements.namedItem('checkOut').min = '';
+    return;
+  }
   const nextDay = new Date(`${event.target.value}T00:00:00Z`);
   nextDay.setUTCDate(nextDay.getUTCDate() + 1);
   form.elements.namedItem('checkOut').min = nextDay.toISOString().slice(0, 10);

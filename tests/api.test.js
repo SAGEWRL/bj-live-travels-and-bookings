@@ -169,6 +169,15 @@ test('an administrator must confirm a guest-agreed amount within the estimate be
     headers: { Cookie: submitted.headers.get('set-cookie').split(';')[0] },
   });
   assert.equal((await customerStatus.json()).booking.status, 'confirmed');
+
+  const declined = await request(`/api/admin/bookings/${booking.id}`, {
+    method: 'PATCH', headers: adminHeaders, body: { status: 'declined', propertyId: property.id },
+  });
+  assert.equal(declined.status, 200);
+  const declinedStatus = await request(`/api/bookings/${booking.reference}`, {
+    headers: { Cookie: submitted.headers.get('set-cookie').split(';')[0] },
+  });
+  assert.equal((await declinedStatus.json()).booking.status, 'declined');
 });
 
 test('property changes require an admin session and published listings are searchable', async () => {

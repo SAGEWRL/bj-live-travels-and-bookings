@@ -7,7 +7,9 @@ const browserScripts = [
   'admin.js',
   'booking-form.js',
   'booking.js',
+  'gallery.js',
   'home.js',
+  'media-slideshow.js',
   'property.js',
   'site.js',
 ];

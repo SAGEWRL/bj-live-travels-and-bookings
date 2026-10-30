@@ -1,3 +1,5 @@
+import { createMediaSlideshow } from './media-slideshow.js';
+
 const galleryGrid = document.querySelector('#gallery-grid');
 
 function formatMoney(value) {
@@ -8,30 +10,7 @@ function renderMedia(property) {
   const mediaList = Array.isArray(property.media) && property.media.length
     ? property.media
     : (property.photos || []).map((url) => ({ url, kind: /\.(mp4|webm|mov)$/i.test(url) ? 'video' : 'image' }));
-  if (!mediaList.length) {
-    const placeholder = document.createElement('div');
-    placeholder.className = 'gallery-card-media';
-    placeholder.innerHTML = '<div class="property-image-empty" style="position:absolute; inset:0;"><span>No media supplied</span></div>';
-    return placeholder;
-  }
-  const first = mediaList[0];
-  const frame = document.createElement('div');
-  frame.className = 'gallery-card-media';
-  if (first.kind === 'video' || /\.(mp4|webm|mov)$/i.test(first.url)) {
-    const video = document.createElement('video');
-    video.src = first.url;
-    video.controls = true;
-    video.preload = 'metadata';
-    video.playsInline = true;
-    frame.append(video);
-    return frame;
-  }
-  const image = document.createElement('img');
-  image.src = first.url;
-  image.alt = `${property.name} gallery highlight`;
-  image.loading = 'lazy';
-  frame.append(image);
-  return frame;
+  return createMediaSlideshow(mediaList, property.name, 'gallery-card-media');
 }
 
 async function loadGallery() {
@@ -45,7 +24,7 @@ async function loadGallery() {
     if (!properties.length) {
       const empty = document.createElement('p');
       empty.className = 'gallery-empty';
-      empty.textContent = 'No published properties are available in the gallery yet.';
+      empty.textContent = 'New stays are being added to the gallery. Please check back soon.';
       galleryGrid.append(empty);
       return;
     }

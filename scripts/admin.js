@@ -41,6 +41,15 @@ function money(value) {
   return `KSh ${Number(value).toLocaleString('en-KE')}`;
 }
 
+function guestMessageUrl(booking, status) {
+  const phone = booking.customerPhone.replace(/\D/g, '');
+  const internationalPhone = phone.startsWith('0') ? `254${phone.slice(1)}` : phone;
+  const message = status === 'confirmed'
+    ? `Hello ${booking.customerName}, your booking request ${booking.reference} has been accepted for ${booking.location}. The confirmed total is ${money(booking.confirmedAmountKes)}. Please reply if you have any questions.`
+    : `Hello ${booking.customerName}, we are sorry but Marevia is unable to accept booking request ${booking.reference} for ${booking.location}. Please contact us if you would like help with another stay.`;
+  return `https://wa.me/${internationalPhone}?text=${encodeURIComponent(message)}`;
+}
+
 function showLogin(configured) {
   loginPanel.hidden = false;
   adminPanel.hidden = true;
@@ -209,7 +218,7 @@ function renderBookings(bookings) {
   if (!bookings.length) {
     const row = tbody.insertRow();
     const cell = row.insertCell();
-    cell.colSpan = 8;
+    cell.colSpan = 9;
     cell.textContent = 'No booking requests have been received.';
     return;
   }
@@ -261,6 +270,15 @@ function renderBookings(bookings) {
     status.dataset.bookingStatus = booking.id;
     statusCell.append(status);
     row.insertCell().textContent = new Date(booking.createdAt).toLocaleDateString();
+    const messageCell = row.insertCell();
+    const messageLink = element('a', 'admin-guest-message', 'WhatsApp guest');
+    messageLink.href = guestMessageUrl(booking, booking.status);
+    messageLink.target = '_blank';
+    messageLink.rel = 'noopener noreferrer';
+    messageLink.dataset.guestMessage = booking.id;
+    messageLink.setAttribute('aria-label', `Prepare a WhatsApp message for ${booking.customerName}`);
+    messageLink.hidden = !['confirmed', 'declined'].includes(booking.status);
+    messageCell.append(messageLink);
   }
 }
 
@@ -450,7 +468,23 @@ document.querySelector('#booking-rows').addEventListener('change', async (event)
       method: 'PATCH',
       body: JSON.stringify({ status, propertyId, confirmedAmountKes: amount || null }),
     });
-    showNotice(status === 'confirmed' ? 'Booking confirmed with the selected property and guest-agreed total.' : 'Booking request details updated.');
+    const messageLink = row.querySelector('[data-guest-message]');
+    if (messageLink) {
+      messageLink.href = guestMessageUrl({
+        reference: row.cells[0].firstChild.textContent,
+        customerName: row.cells[2].firstChild.textContent,
+        customerPhone: row.cells[2].querySelector('small')?.textContent || '',
+        location: row.cells[0].querySelector('small').textContent.split(' · ')[0],
+        confirmedAmountKes: amount,
+      }, status);
+      messageLink.hidden = !['confirmed', 'declined'].includes(status);
+    }
+    const notice = status === 'confirmed'
+      ? 'Booking accepted. The guest can see the decision on their request page.'
+      : status === 'declined'
+        ? 'Booking declined. The guest can see the decision on their request page.'
+        : 'Booking request details updated.';
+    showNotice(notice);
   } catch (error) { showNotice(error.message, 'error'); await loadBookings(); }
 });
 

@@ -135,10 +135,46 @@ function renderProperty(property) {
   const edit = element('button', 'admin-button', 'Edit');
   edit.type = 'button';
   edit.dataset.editProperty = property.id;
+  const upload = element('button', 'admin-button', 'Upload gallery media');
+  upload.type = 'button';
+  const uploadIcon = document.createElement('i');
+  uploadIcon.dataset.lucide = 'images';
+  uploadIcon.setAttribute('aria-hidden', 'true');
+  upload.prepend(uploadIcon);
+  const mediaInput = document.createElement('input');
+  mediaInput.type = 'file';
+  mediaInput.accept = 'image/jpeg,image/png,image/webp,video/mp4,video/webm';
+  mediaInput.multiple = true;
+  mediaInput.hidden = true;
+  mediaInput.setAttribute('aria-label', `Choose gallery media for ${property.name}`);
+  upload.addEventListener('click', () => mediaInput.click());
+  mediaInput.addEventListener('change', async () => {
+    const files = [...mediaInput.files];
+    if (!files.length) return;
+    upload.disabled = true;
+    try {
+      for (const file of files) {
+        if (file.size > 4 * 1024 * 1024) throw new Error(`${file.name} is larger than 4 MB.`);
+        await request(`/api/admin/properties/${property.id}/photos`, {
+          method: 'POST',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        });
+      }
+      showNotice(`${files.length} gallery item${files.length === 1 ? '' : 's'} uploaded for ${property.name}.`);
+      await loadProperties();
+    } catch (error) {
+      showNotice(error.message, 'error');
+      await loadProperties().catch(() => {});
+    } finally {
+      mediaInput.value = '';
+      upload.disabled = false;
+    }
+  });
   const remove = element('button', 'admin-button admin-button-quiet', 'Remove');
   remove.type = 'button';
   remove.dataset.deleteProperty = property.id;
-  controls.append(edit, remove);
+  controls.append(edit, upload, remove, mediaInput);
   card.append(controls);
 
   const details = document.createElement('details');
@@ -176,6 +212,7 @@ async function loadProperties() {
   } else {
     properties.forEach((property) => propertyList.append(renderProperty(property)));
   }
+  window.lucide?.createIcons();
 }
 
 async function loadPackages() {

@@ -66,6 +66,8 @@ export default {
     if (!url.pathname.startsWith('/api/')) {
       const mappedPath = assetUrl(url);
       if (mappedPath) {
+        const propertyMatch = url.pathname.match(/^\/properties\/([a-z0-9-]+)$/i);
+        if (propertyMatch) url.searchParams.set('slug', propertyMatch[1]);
         url.pathname = mappedPath;
         return env.ASSETS.fetch(new Request(url, request));
       }

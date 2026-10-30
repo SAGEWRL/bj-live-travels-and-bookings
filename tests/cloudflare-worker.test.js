@@ -32,6 +32,17 @@ test('Cloudflare Worker maps the gallery route to static HTML', async () => {
   assert.equal(await response.text(), '/pages/gallery.html');
 });
 
+test('Cloudflare Worker preserves the property slug and query when mapping the detail page', async () => {
+  let mappedUrl;
+  await worker.fetch(new Request('https://example.workers.dev/properties/white-castle-4bc37133?checkIn=2026-11-02'), {
+    ASSETS: { fetch: (request) => { mappedUrl = new URL(request.url); return new Response('ok'); } },
+  });
+
+  assert.equal(mappedUrl.pathname, '/pages/property.html');
+  assert.equal(mappedUrl.searchParams.get('slug'), 'white-castle-4bc37133');
+  assert.equal(mappedUrl.searchParams.get('checkIn'), '2026-11-02');
+});
+
 test('Cloudflare Worker reports missing required API configuration', async () => {
   const response = await worker.fetch(new Request('https://example.workers.dev/api/admin/session'), {});
 

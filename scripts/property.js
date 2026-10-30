@@ -18,7 +18,8 @@ function addFact(container, label, value) {
 }
 
 async function loadProperty() {
-  const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean).pop() || '');
+  const slug = new URLSearchParams(window.location.search).get('slug')
+    || decodeURIComponent(window.location.pathname.split('/').filter(Boolean).pop() || '');
   const status = document.querySelector('#property-detail-status');
   const detail = document.querySelector('#property-detail');
   try {
